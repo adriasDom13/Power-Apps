@@ -1,0 +1,69 @@
+Scenario 1 - Getting top 3 Service Line using Gallery for the output
+Ranking of Top 3 Participated Service Lines
+Data sources:
+1. BM_SLSF_List - Sharepoint list for unique records of Service line with corresponding total Headcount as a column.
+  SL_SF_List     |   Headcount
+____________________________________  
+  CBS            |    20
+  TAX            |    30 
+  Assurance      |    40
+
+
+2. BM_Achieved_list - Sharepoint list for all BM records logged by users including the total number of task submitted
+
+  Employee_Name   |   Employee_Email    | SL_SF          |     Total_Achieved_BM
+_____________________________________________________________________________________
+  Dominique       |  dom@gmail.com      |  CBS           |    10
+  Josh            |  josh@gmail.com     |  TAX           |    11  
+  Ogie            |  Ogie@gmail.com     |  Assurance     |    13
+
+
+
+
+Gallery code below show the top 3 Service Line base on participation rate:
+FirstN(With( /// showing the first 3 line(Top 3) Code start for Rank index
+    {
+        ThisGallery: Sort(
+            AddColumns(
+                BM_SLSF_List,
+                "BM Achieved",
+                Sum(
+                    ForAll(
+                        Filter(
+                            BM_Achieved_list,
+                            ThisRecord.SL_SF = SL_SF_List
+                        ),
+                        Total_Achieved_BM
+                    ),
+                    Value
+                ),
+                "Participation rank rate",
+                RoundUp((CountRows(
+                    Distinct(
+                        Filter(
+                            BM_Achieved_list,
+                            SL_SF = SL_SF_List
+                        ),
+                        Employee_email
+                    )
+                )/ThisRecord.HC)*100,2)
+            ),
+            'Participation rank rate',
+            SortOrder.Descending
+        )
+    },
+    ForAll(
+        Sequence(CountRows(ThisGallery)),
+        Patch(
+            Last(
+                FirstN(                       /// showing the first 3 line(Top 3)
+                    ThisGallery,
+                    Value
+                )
+            ),
+            {rowNum: Value}
+        )
+    )
+),3)
+
+
